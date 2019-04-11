@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+    body {
+        font: 10px sans-serif;
+    }
+
+    .axis path,
+    .axis line {
+        fill: none;
+        stroke: #000;
+        shape-rendering: crispEdges;
+    }
+
+
+</style>
+<body>
+<div id = "container">
+
+        <div id="div_data_desc">
+            <h1>Global Environmental Data</h1>
+        </div>
+        <div id="div_buttons">
+            <button id="button_fa" onclick="reloadP()" name = "ForestButton">Forest Area</button>
+            <button id="button_eps" onclick="reloadP2()">Environmental Policy Stringency</button>
+        </div>
+    <div id="vis" >
+    </div>
+    <div id = "vis2">
+    </div>
+
+</div>
+
+
+
+<link rel="stylesheet" type="text/css" href="EFungProject.css" />
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script type="text/javascript" src="EFungProject2.js"></script>
+<!--<script type="text/javascript" src="jquery-3.3.1.min.js"></script>-->
+</body>
