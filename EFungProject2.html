@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+    body {
+        font: 10px sans-serif;
+    }
+
+    .axis path,
+    .axis line {
+        fill: none;
+        stroke: #000;
+        shape-rendering: crispEdges;
+    }
+
+
+</style>
+<body>
+
+<div class="container">
+    <h2>Forest Area (% Land Area) and Policy Stringency </h2>
+    <div class="row">
+        <div class="col-sm-10" id="vis">
+        </div>
+        <div class="col-sm-2">
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" type="text/css" href="EFungProject.css" />
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script>
+
+    window.onload = function(){
+        setup();
+        setup2();
+
+    };
+    function setup2() {
+
+        var tabulate = function (data,columns) {
+            var table = d3.select('body').append('table')
+            var thead = table.append('thead')
+            var tbody = table.append('tbody')
+
+            thead.append('tr')
+                .selectAll('th')
+                .data(columns)
+                .enter()
+                .append('th')
+                .text(function (d) { return d })
+
+            var rows = tbody.selectAll('tr').data(data)
+                .enter()
+                .append('tr')
+
+            var cells = rows.selectAll('td')
+                .data(function(row) {
+                    return columns.map(function (column) {
+                        return { column: column, value: row[column] }
+                    })
+                })
+                .enter()
+                .append('td')
+                .text(function (d) { return d.value })
+
+            return table;
+        }
+
+        d3.csv('ForestAreaEdited.csv',function (data) {
+            var columns = ['Country','Year','EPIR']
+            var EPItable = tabulate(data,columns)
+            EPItable.selectAll("tbody tr")
+                .sort(function(a, b) {
+                    return d3.descending(a.EPIR, b.EPIR);
+                });
+        })
+
+    }
+    function setup() {
+        var margin = {top: 20, right: 20, bottom: 30, left: 40},
+            width = 1100 - margin.left - margin.right,
+            height = 650 - margin.top - margin.bottom;
+
+        var x = d3.scale.linear()
+            .range([0, width]);
+
+        var y = d3.scale.linear()
+            .range([height, 100]);
+
+        var z = d3.scale.category10();
+
+        var svg = d3.select("#vis").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        d3.csv("ForestAreaEdited.csv", function(error, data) {
+            if (error) throw error;
+            // Compute the series names ("y1", "y2", etc.) from the loaded CSV.
+            var seriesNames = ["ForestArea", "EPS"]
+
+            // Map the data to an array of arrays of {x, y} tuples.
+            var series = seriesNames.map(function(series) {
+                return data.map(function(d) {
+                    return {x: +d.Year, y: +d[series]};
+                });
+            });
+
+            // Compute the scales’ domains.
+            x.domain(d3.extent(d3.merge(series), function(d) { return d.x; })).nice();
+            y.domain(d3.extent(d3.merge(series), function(d) { return d.y; })).nice();
+
+            // Add the x-axis.
+            svg.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.svg.axis().scale(x).orient("bottom"));
+
+            // Add the y-axis.
+            svg.append("g")
+                .attr("class", "y axis")
+                .call(d3.svg.axis().scale(y).orient("left"));
+
+            // Add the points!
+            svg.selectAll(".series")
+                .data(series)
+                .enter().append("g")
+                .attr("class", "series")
+                .style("fill", function(d, i) { return z(i); })
+                .selectAll(".point")
+                .data(function(d) { return d; })
+                .enter().append("circle")
+                .attr("class", "point")
+                .attr("r", 4.5)
+                .style("stroke", "white")
+                .attr("cx", function(d) { return x(d.x); })
+                .attr("cy", function(d) { return y(d.y); });
+
+            svg.selectAll(".point")
+                .append("svg:title")
+                .text(function(d) {return d.y;});
+
+        });
+    }
+
+
+</script>
