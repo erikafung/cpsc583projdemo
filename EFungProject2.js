@@ -1,4 +1,7 @@
 
+var policyview;
+var forestview;
+
 window.onload = function() {
     setup3();
     var reloading = sessionStorage.getItem("reloading");
@@ -6,10 +9,14 @@ window.onload = function() {
     if (reloading) {
         sessionStorage.removeItem("reloading");
         setup();
+        policyview = false;
+        forestview = true;
     }
     if (reloading2) {
         sessionStorage.removeItem("reloading2");
         setup2();
+        forestview = false;
+        policyview = true;
     }
 }
 
@@ -22,7 +29,15 @@ function reloadP2() {
     document.location.reload();
 }
 function setup3() {
-
+    var Tooltip = d3.select("#vis")
+        .append("div")
+        .style("opacity", 0)
+        .attr("class", "tooltip")
+        .style("background-color", "white")
+        .style("border", "solid")
+        .style("border-width", "2px")
+        .style("border-radius", "5px")
+        .style("padding", "5px")
 
     d3.select("#vis").append("h1")
         .attr("text-anchor", "middle")
@@ -30,7 +45,9 @@ function setup3() {
         .style("font-size", "24px")
         .text("Click a button to start the visualization");
 
+
     var dataset = [];
+    var datasetraw = [];
 
     d3.csv('ForestAreaEdited.csv',function (d) {
 
@@ -40,15 +57,17 @@ function setup3() {
             d.Year = +d.Year;
             //d.Country = +d["Country"];
             d.EPIR = +d.EPIR;
+            d.EH = +d.EH;
+            d.EV = +d.EV;
         });
 
-        dataset = d.map(function(d) {
+        datasetraw = d.map(function(d) {
             if (d.Year > 2017) {
-                return [ d["Country"], d.EPIR ];
+                return [ d["Country"], d.EPIR];
             }
         });
 
-        dataset = dataset.filter(function( element ) {
+        dataset = datasetraw.filter(function( element ) {
             return element !== undefined;
         });
 
@@ -56,7 +75,7 @@ function setup3() {
         var header = table.append("thead").append("tr");
         header
             .selectAll("th")
-            .data(["Country", "EPI Ranking"])
+            .data(["Country", "EPI Ranking*"])
             .enter()
             .append("th")
             .text(function(d) { return d; });
@@ -77,20 +96,112 @@ function setup3() {
             .text(function(d) {
                 return d;
             })
-    })
-
-    console.log();
-
-
+            d3.selectAll("td").on("mouseover", function(d) {
+                //highlight table
+                console.log(this.parentNode);
+                d3.select(this.parentNode)
+                    .style("background-color", "darkturquoise");
+                var legendCount = this;
+                if (forestview) {
+                    d3.selectAll("circle")
+                        .filter(function (d) {
+                            return legendCount.innerText != d.Country && !isNaN(d.ForestArea) && d.Year != 2018; //&& !isNaN(d.ForestArea) && !isNaN(d.EPS) && d.Year != 2018;
+                        })
+                    .style("opacity", 0.2);
+                }
+                else if (policyview) {
+                    d3.selectAll("circle")
+                        .filter(function (d) {
+                            return legendCount.innerText != d.Country && !isNaN(d.EPS) && d.Year != 2018; //&& !isNaN(d.ForestArea) && !isNaN(d.EPS) && d.Year != 2018;
+                        })
+                    .style("opacity", 0.2);
+                }
+                d3.selectAll("circle")
+                    .filter(function (d) {
+                        return legendCount.innerText == d.Country && d.Year != 2018;
+                    })
+                    .attr("r", 8)
+                    .style("opacity", 1);
+                if (policyview) {
+                    d3.selectAll("circle")
+                        .filter(function (d) {
+                            return isNaN(d.EPS); //&& !isNaN(d.ForestArea) && !isNaN(d.EPS) && d.Year != 2018;
+                        })
+                        .style("opacity", 0);
+                }
+            // Tooltip.style("opacity", 1)
+            //         .style("stroke", "black")
+            //         .style("opacity", 1)
+            //         .html("Additional information: <br> Country: " + this.innerText + "<br>Environmental Health: ")
+            //         .style("left", (d3.mouse(this)[0]+70) + "px")
+            //         .style("top", (d3.mouse(this)[1]) + "px");
+            })
+        d3.selectAll("td").on("mouseout", function(d){
+            d3.select(this.parentNode)
+                .style("background-color", "white");
+            var legendCount = this;
+            if (forestview) {
+                d3.selectAll("circle")
+                    .filter(function (d) {
+                        return legendCount.innerText != d.Country && !isNaN(d.ForestArea) && d.Year != 2018; //&& !isNaN(d.ForestArea) && !isNaN(d.EPS) && d.Year != 2018;
+                    })
+                    .style("opacity", 1);
+            }
+            else if (policyview) {
+                d3.selectAll("circle")
+                    .filter(function (d) {
+                        return legendCount.innerText != d.Country && !isNaN(d.EPS) && d.Year != 2018; //&& !isNaN(d.ForestArea) && !isNaN(d.EPS) && d.Year != 2018;
+                    })
+                    .style("opacity", 1);
+            }
+            d3.selectAll("circle")
+                .filter(function (d) {
+                    return legendCount.innerText == d.Country && d.Year != 2018;
+                })
+                .attr("r", 4.5)
+                .style("opacity", 1);
+            if (policyview) {
+                d3.selectAll("circle")
+                    .filter(function (d) {
+                        return isNaN(d.EPS); //&& !isNaN(d.ForestArea) && !isNaN(d.EPS) && d.Year != 2018;
+                    })
+                    .style("opacity", 0);
+            }
+            // Tooltip
+            //     .style("opacity", 0)
+            // d3.select(this)
+            //     .style("stroke", "none")
+            //     .style("opacity", 0.8);
+            // if (d3.select(this).attr("class") === "isBrushed"){
+            //     type = "isBrushed";
+            // }
+            //d.style("background", "darkturquoise");
+        })
+        d3.select("#vis2").append("p")
+            .attr("text-anchor", "middle")
+            .attr("id", "pSide")
+            .style("font-size", "12px")
+            .text("*EPI is the Environmental Performance Index");
+    });
 
 }
+//Policy
 function setup2() {
     d3.select("#h1start").remove();
+    d3.select("h2FTitle").remove();
+    d3.select("h2PTitle").remove();
+    d3.select("#vis").append("h2")
+        .attr("text-anchor", "middle")
+        .attr("id", "h2PTitle")
+        .style("font-size", "24px")
+        .text("Environmental Policy Stringency Index of Countries Over Time");
+
+
     var enterGroup;
 
-    var margin = {top: 20, right: 20, bottom: 30, left: 40},
-        width = 1100 - margin.left - margin.right,
-        height = 650 - margin.top - margin.bottom;
+    var margin = {top: 20, right: 20, bottom: 50, left: 50},
+        width = 1000 - margin.left - margin.right,
+        height = 610 - margin.top - margin.bottom;
 
     var x = d3.scale.linear()
         .range([0, width]);
@@ -133,17 +244,17 @@ function setup2() {
         //var format = d3.time.format("%Y");
         // format.parse("2011-01-01"); // returns a Date
         // format(new Date(2011, 0, 1));
-        var parseTime = d3.time.format("%Y");
+        //var parseTime = d3.time.format("%Y");
 
         data.forEach(function(d) {
             d.EPS = +d.EPS;
             d.ForestArea= +d.ForestArea;
-            d.Year = parseTime(new Date(d.Year));//+d.Year;
+            d.Year = d.Year;
             d.Country = d["Country"];
         });
-
         // Compute the scales’ domains.
-        x.domain(d3.extent(data, function(d) { return d.Year; })).nice();
+        x.domain([1989,2017]).clamp(true);
+        //x.domain(d3.extent(data, function(d) { return d.Year; })).nice();
         y.domain(d3.extent(data, function(d) { return d.EPS; })).nice();
         // y.domain(d3.extent(d3.merge(data), function(d) { return d.ForestArea; })).nice();
 
@@ -151,12 +262,29 @@ function setup2() {
         svg.append("g")
             .attr("class", "x axis")
             .attr("transform", "translate(0," + height + ")")
-            .call(d3.svg.axis().scale(x).orient("bottom"));
+            .call(d3.svg.axis().scale(x).orient("bottom").tickFormat(d3.format("d")));
+
+        svg.append("text")
+            .attr("transform",
+                "translate(" + (width/2) + " ," +
+                (height + margin.top + 20) + ")")
+            .style("text-anchor", "middle")
+            .style("font-size", "15px")
+            .text("Year");
 
         // Add the y-axis.
         svg.append("g")
             .attr("class", "y axis")
             .call(d3.svg.axis().scale(y).orient("left"));
+
+        svg.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 0 - margin.left)
+            .attr("x",0 - (height / 2))
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .style("font-size", "15px")
+            .text("Policy Stringency Index");
 
         // Add the points!
         // svg.selectAll(data)
@@ -210,7 +338,7 @@ function setup2() {
             .append("title")
             .text(function(d) {return d.Country + ": " + d.EPS;});
 
-        enterGroup.highlight = function(data, type){
+        enterGroup.highlight = function(data, type) {
             enterGroup.selectAll("circle")
                 .filter(function (d) {
                     return d.Country == data.Country;
@@ -221,6 +349,20 @@ function setup2() {
                     return d.Country != data.Country && !isNaN(d.EPS) && d.Year != 2018;
                 })
                 .style("opacity", 0.2);
+            // select table element
+            var tdElem = d3.selectAll("td");
+            for (var i = 0; i < 60; i++) {
+                    tdElem.filter(function (d) {
+                        if (tdElem[0][i].innerText == data.Country) {
+                            d3.select(tdElem[0][i])
+                                .style("background-color","darkturquoise");
+                            d3.select(tdElem[0][i+1])
+                                .style("background-color","darkturquoise");
+                        }
+                        return;
+                    })
+            }
+
         };
 
         enterGroup.removeHighlight = function(data, type){
@@ -234,6 +376,18 @@ function setup2() {
                     return d.Country != data.Country && !isNaN(d.EPS) && d.Year != 2018;
                 })
                 .style("opacity", 1);
+            var tdElem = d3.selectAll("td");
+            for (var i = 0; i < 60; i++) {
+                tdElem.filter(function (d) {
+                    if (tdElem[0][i].innerText == data.Country) {
+                        d3.select(tdElem[0][i])
+                            .style("background-color","white");
+                        d3.select(tdElem[0][i+1])
+                            .style("background-color","white");
+                    }
+                    return;
+                })
+            }
 
         };
 
@@ -270,14 +424,22 @@ function setup2() {
         enterGroup.removeHighlight(data, type);
     }
 }
+//Forest
 function setup() {
     d3.select("#h1start").remove();
+    d3.select("h2FTitle").remove();
+    d3.select("h2PTitle").remove();
+    d3.select("#vis").append("h2")
+        .attr("text-anchor", "middle")
+        .attr("id", "h2FTitle")
+        .style("font-size", "24px")
+        .text("Forest Area (%) of Land Area of Countries Over Time");
     var enterGroup;
 
 
-    var margin = {top: 20, right: 20, bottom: 30, left: 40},
-        width = 1100 - margin.left - margin.right,
-        height = 650 - margin.top - margin.bottom;
+    var margin = {top: 20, right: 20, bottom: 50, left: 50},
+        width = 1000 - margin.left - margin.right,
+        height = 610 - margin.top - margin.bottom;
 
     var x = d3.scale.linear()
         .range([0, width]);
@@ -318,18 +480,19 @@ function setup() {
         //     });
         // });
         //var parseTime = d3.timeParse("%Y");
-        var parseTime = d3.time.format("%Y");
+        //var parseTime = d3.time.format("%Y");
 
         data.forEach(function(d) {
            d.EPS = +d.EPS;
            d.ForestArea= +d.ForestArea;
-           d.Year = parseTime(new Date(d.Year));
+           d.Year = d.Year;
            d.Country = d["Country"];
         });
 
 
         // Compute the scales’ domains.
-        x.domain(d3.extent(data, function(d) { return d.Year; })).nice();
+        x.domain([1989,2017]).clamp(true);
+        //x.domain(d3.extent(data, function(d) { return d.Year; })).nice();
         y.domain(d3.extent(data, function(d) { return d.ForestArea; })).nice();
         // y.domain(d3.extent(d3.merge(data), function(d) { return d.ForestArea; })).nice();
 
@@ -337,12 +500,29 @@ function setup() {
         svg.append("g")
             .attr("class", "x axis")
             .attr("transform", "translate(0," + height + ")")
-            .call(d3.svg.axis().scale(x).orient("bottom"));
+            .call(d3.svg.axis().scale(x).orient("bottom").tickFormat(d3.format("d")));
+
+        svg.append("text")
+            .attr("transform",
+                "translate(" + (width/2) + " ," +
+                (height + margin.top + 20) + ")")
+            .style("text-anchor", "middle")
+            .style("font-size", "15px")
+            .text("Year");
 
         // Add the y-axis.
         svg.append("g")
             .attr("class", "y axis")
             .call(d3.svg.axis().scale(y).orient("left"));
+
+        svg.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 0 - margin.left)
+            .attr("x",0 - (height / 2))
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .style("font-size", "15px")
+            .text("Forest Area (%)");
 
         // Add the points!
         // svg.selectAll(data)
@@ -407,6 +587,18 @@ function setup() {
                     return d.Country != data.Country && !isNaN(d.ForestArea) && d.Year != 2018;
                 })
                 .style("opacity", 0.2);
+            var tdElem = d3.selectAll("td");
+            for (var i = 0; i < 60; i++) {
+                tdElem.filter(function (d) {
+                    if (tdElem[0][i].innerText == data.Country) {
+                        d3.select(tdElem[0][i])
+                            .style("background-color","darkturquoise");
+                        d3.select(tdElem[0][i+1])
+                            .style("background-color","darkturquoise");
+                    }
+                    return;
+                })
+            }
         };
 
         enterGroup.removeHighlight = function(data, type){
@@ -420,6 +612,18 @@ function setup() {
                     return d.Country != data.Country && !isNaN(d.ForestArea) && d.Year != 2018;
                 })
                 .style("opacity", 1);
+            var tdElem = d3.selectAll("td");
+            for (var i = 0; i < 60; i++) {
+                tdElem.filter(function (d) {
+                    if (tdElem[0][i].innerText == data.Country) {
+                        d3.select(tdElem[0][i])
+                            .style("background-color","white");
+                        d3.select(tdElem[0][i+1])
+                            .style("background-color","white");
+                    }
+                    return;
+                })
+            }
 
         };
 
